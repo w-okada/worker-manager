@@ -1,0 +1,12 @@
+*~
+*#
+node_modules
+src
+.eslintrc.js
+.npmignore
+.prettierrc
+package-lock.json
+tsconfig.json
+webpack.common.js
+webpack.dev.js
+webpack.prod.js
