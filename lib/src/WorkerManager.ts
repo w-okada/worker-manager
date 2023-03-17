@@ -68,7 +68,7 @@ export class WorkerManager {
         if (config.browserType == "SAFARI" || config.onLocal == true) {
             await importExternal(config.processorURL)
             // @ts-ignore
-            this.processor = new global[config.processorName](config.psdFile, config.canvas, config.maxWidth, config.maxHeight)
+            this.processor = new global[config.processorName](config)
             console.log("[WorkerManager] Processor work on local")
         } else {
             const newWorker: Worker = workerJs();
@@ -141,7 +141,6 @@ export class WorkerManager {
                     );
                 })
                 const c = await p
-                console.log("worker response:", c)
                 return c
             }
         } catch (exception) {
