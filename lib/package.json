@@ -1,6 +1,6 @@
 {
     "name": "@dannadori/worker-manager",
-    "version": "1.0.11",
+    "version": "1.0.20",
     "description": "",
     "main": "dist/index.js",
     "scripts": {
@@ -24,19 +24,19 @@
     },
     "homepage": "https://github.com/w-okada/worker-manager#readme",
     "devDependencies": {
-        "@types/node": "^18.11.18",
+        "@types/node": "^20.8.4",
         "npm-run-all": "^4.1.5",
-        "rimraf": "^3.0.2",
-        "typescript": "^4.9.4",
-        "eslint": "^8.30.0",
-        "eslint-config-prettier": "^8.5.0",
-        "eslint-plugin-prettier": "^4.2.1",
-        "eslint-plugin-react": "^7.31.11",
-        "prettier": "^2.8.1",
-        "webpack": "^5.75.0",
-        "webpack-cli": "^5.0.1",
+        "rimraf": "^5.0.5",
+        "typescript": "^5.2.2",
+        "eslint": "^8.51.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-prettier": "^5.0.0",
+        "eslint-plugin-react": "^7.33.2",
+        "prettier": "^3.0.3",
+        "webpack": "^5.88.2",
+        "webpack-cli": "^5.1.4",
         "worker-loader": "^3.0.8",
-        "ts-loader": "^9.4.2"
+        "ts-loader": "^9.5.0"
     },
     "dependencies": {}
 }

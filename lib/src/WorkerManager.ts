@@ -7,40 +7,39 @@ import workerJs from "worker-loader?inline=no-fallback!./Worker.ts";
 
 const importExternal = (url: string) => {
     return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
+        const script = document.createElement("script");
         script.src = url;
         script.async = true;
         // @ts-ignore
-        script.onload = () => resolve(window['external_global_component']);
+        script.onload = () => resolve(window["external_global_component"]);
         script.onerror = reject;
 
         document.body.appendChild(script);
     });
-}
+};
 
 // Convert HTMLCanvasElement to OffscreenCanvas
 const convertObjectForTransfer = (input: ProcessorConfig | ProcessorParams) => {
-    const replacedTranser = input.transfer.map(x => {
+    const replacedTranser = input.transfer.map((x) => {
         if (x instanceof HTMLCanvasElement) {
             const offScreenCanvas = x.transferControlToOffscreen();
             for (const prop in input) {
                 //@ts-ignore
                 if (input[prop] == x) {
                     //@ts-ignore
-                    input[prop] = offScreenCanvas
+                    input[prop] = offScreenCanvas;
                 }
             }
-            return offScreenCanvas
+            return offScreenCanvas;
         }
-        return x
-    })
-    input.transfer = replacedTranser
-}
-
+        return x;
+    });
+    input.transfer = replacedTranser;
+};
 
 export class WorkerManager {
     private worker: Worker | null = null;
-    private processor: Processor | null = null
+    private processor: Processor | null = null;
 
     private config: ProcessorConfig | null = null;
     private sem = new BlockingQueue<number>();
@@ -57,19 +56,18 @@ export class WorkerManager {
     };
 
     init = async (config: ProcessorConfig) => {
-
-        const lockNum = await this.lock()
-        this.config = config
+        const lockNum = await this.lock();
+        this.config = config;
         if (this.worker) {
             this.worker.terminate();
         }
         this.worker = null;
 
         if (config.browserType == "SAFARI" || config.onLocal == true) {
-            await importExternal(config.processorURL)
+            await importExternal(config.processorURL);
             // @ts-ignore
-            this.processor = new global[config.processorName](config)
-            console.log("[WorkerManager] Processor work on local")
+            this.processor = new global[config.processorName](config);
+            console.log("[WorkerManager] Processor work on local");
         } else {
             const newWorker: Worker = workerJs();
             const p = new Promise<void>((resolve, reject) => {
@@ -78,26 +76,30 @@ export class WorkerManager {
                         this.worker = newWorker;
                         resolve();
                     } else {
-                        console.warn("Initialization something wrong..");
+                        console.warn("Initialization something wrong.....", event.data);
                         reject();
                     }
                 };
 
-                convertObjectForTransfer(config)
+                convertObjectForTransfer(config);
 
-                newWorker.postMessage({
-                    message: WorkerCommand.INITIALIZE,
-                    config: config,
-                }, config.transfer as Transferable[]);
+                newWorker.postMessage(
+                    {
+                        message: WorkerCommand.INITIALIZE,
+                        config: config,
+                    },
+                    config.transfer as Transferable[],
+                );
             });
-            await p
-            console.log("[WorkerManager] Processor work on Worker")
+            await p;
+            console.log("[WorkerManager] Processor work on Worker");
         }
-        await this.unlock(lockNum)
+
+        await this.unlock(lockNum);
         return;
     };
 
-    execute = async (params: ProcessorParams) => {
+    execute = async (params: ProcessorParams, callback: ((data: any) => void) | null = null) => {
         if (this.sem.length > 100) {
             throw new Error(`queue is fulled: ${this.sem.length}`);
         }
@@ -106,47 +108,51 @@ export class WorkerManager {
             throw new Error("no config.");
         }
 
-
         const lockNum = await this.lock();
         try {
             if (this.config.browserType == "SAFARI" || this.config.onLocal == true) {
                 if (!this.processor) {
                     throw new Error("processor is not activated.");
                 }
-                return this.processor.process(params)
-
+                return await this.processor.process(params);
             } else {
                 const p = new Promise<ProcessorResult>((resolve, reject) => {
                     if (!this.worker) {
                         reject("worker is not activated. 2");
-                        return
+                        return;
                     }
                     this.worker.onmessage = (event) => {
                         if (event.data.message === WorkerResponse.EXECUTED) {
                             resolve(event.data.data as ProcessorResult);
+                        } else if (event.data.message === WorkerResponse.POST) {
+                            if (callback) {
+                                callback(event.data.data);
+                            } else {
+                                console.warn("callback is not set", event.data.data);
+                            }
                         } else {
                             console.error("Execute is panic: unknwon message", event.data.message);
                             reject(event);
                         }
                     };
 
-                    convertObjectForTransfer(params)
+                    convertObjectForTransfer(params);
 
                     this.worker.postMessage(
                         {
                             message: WorkerCommand.EXECUTE,
                             params: params,
                         },
-                        params.transfer as Transferable[]
+                        params.transfer as Transferable[],
                     );
-                })
-                const c = await p
-                return c
+                });
+                const c = await p;
+                return c;
             }
         } catch (exception) {
-            throw (exception)
+            throw exception;
         } finally {
             this.unlock(lockNum);
         }
-    }
+    };
 }
